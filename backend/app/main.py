@@ -1,0 +1,65 @@
+import os
+from contextlib import asynccontextmanager
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+
+from backend.app.config import settings
+from backend.app.database_firebase import init_firestore, is_mock_firestore
+from backend.app.api import auth_router, products_router
+from backend.app.api.alerts import router as alerts_router
+from backend.app.mock_store import mock_store_router
+from backend.app.services.scheduler import start_scheduler, stop_scheduler
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup: Initialize Firestore database client
+    init_firestore()
+    # Start periodic price checking scheduler
+    start_scheduler()
+    yield
+    # Shutdown: Stop scheduler
+    stop_scheduler()
+
+
+app = FastAPI(
+    title=settings.PROJECT_NAME,
+    description=(
+        "A full-featured Price Drop Tracker & Alert API powered by Google Cloud Firestore (Firebase). "
+        "Tracks e-commerce products, records price movements in subcollections, and triggers drop alerts."
+    ),
+    version="2.0.0",
+    lifespan=lifespan
+)
+
+# CORS middleware for frontend flexibility
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Mount API routes
+app.include_router(auth_router)
+app.include_router(products_router)
+app.include_router(alerts_router)
+app.include_router(mock_store_router)
+
+
+@app.get("/health", tags=["System"])
+def health_check():
+    """Health check endpoint to verify system and database status."""
+    return {
+        "status": "healthy",
+        "database": "firestore" if not is_mock_firestore() else "firestore_mock_mode",
+        "scheduler_enabled": settings.SCHEDULER_ENABLED
+    }
+
+
+# Mount frontend static directory if present
+frontend_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "frontend")
+if os.path.exists(frontend_dir):
+    app.mount("/", StaticFiles(directory=frontend_dir, html=True), name="frontend")

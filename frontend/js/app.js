@@ -143,6 +143,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
         closeFirebaseAuthModal();
         fbPassword.value = "";
+        await checkAuth();
       } catch (err) {
         console.error("Firebase Auth Error:", err);
         let message = err.message || "Authentication failed.";
@@ -170,7 +171,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     currentUser = await window.api.getCurrentUser();
     updateNav();
     if (currentUser) {
-      loadProducts();
+      await loadProducts();
       initDemoSelector();
     } else {
       renderLoggedOutState();

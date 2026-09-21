@@ -63,7 +63,7 @@ class ProductRepository:
                 return None
             user_id = product.get("user_id")
 
-        alerts = self.alerts_collection(user_id).where("product_id", "==", str(product_id)).where("status", "==", "active").stream()
+        alerts = list(self.alerts_collection(user_id).where("product_id", "==", str(product_id)).where("status", "==", "active").stream())
         if not alerts:
             return None
         first = alerts[0].to_dict()

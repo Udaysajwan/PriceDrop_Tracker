@@ -9,12 +9,18 @@ from backend.app.main import app
 
 
 @pytest.fixture(autouse=True)
-def clean_firestore_db():
-    """Clear in-memory Firestore collections before each test run."""
-    db = get_firestore_db()
-    if isinstance(db, MockFirestoreClient):
-        db._collections.clear()
-    yield
+def clean_firestore_db(monkeypatch):
+    """Ensure tests always run against a fresh in-memory Mock Firestore instance."""
+    import backend.app.database_firebase as db_fb
+    mock_db = MockFirestoreClient()
+    monkeypatch.setattr(db_fb, "_firestore_client", mock_db)
+    monkeypatch.setattr(db_fb, "_is_mock_mode", True)
+    monkeypatch.setattr(db_fb, "get_firestore_db", lambda: mock_db)
+    monkeypatch.setattr(db_fb, "init_firestore", lambda: mock_db)
+    monkeypatch.setattr("backend.app.main.init_firestore", lambda: mock_db)
+    monkeypatch.setattr("backend.app.main.start_scheduler", lambda: None)
+    monkeypatch.setattr("backend.app.main.stop_scheduler", lambda: None)
+    yield mock_db
 
 
 @pytest.fixture(scope="function")

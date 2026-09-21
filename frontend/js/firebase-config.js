@@ -2,9 +2,9 @@
 const firebaseConfig = window.FIREBASE_CONFIG || {
   projectId: "backend--api",
   authDomain: "backend--api.firebaseapp.com",
-  storageBucket: "backend--api.appspot.com",
-  // Paste your Firebase Web API Key from Firebase Console (Project Settings -> General -> Web Apps):
-  apiKey: window.FIREBASE_API_KEY || "",
+  storageBucket: "backend--api.firebasestorage.app",
+  appId: "1:846328447309:web:9ba37faf133d6c02c87704",
+  apiKey: window.FIREBASE_API_KEY || "AIzaSyBR-V4fnW5-aVskMlJCvl9rQHIXvbOlsJA",
 };
 
 let auth = null;

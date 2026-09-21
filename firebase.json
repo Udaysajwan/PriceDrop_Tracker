@@ -1,4 +1,10 @@
 {
+  "auth": {
+    "authorizedDomains": ["localhost", "127.0.0.1"],
+    "providers": {
+      "emailPassword": true
+    }
+  },
   "emulators": {
     "dataconnect": {
       "dataDir": "dataconnect/.dataconnect/pgliteData"
@@ -14,7 +20,7 @@
     "indexes": "firestore.index"
   },
   "hosting": {
-    "public": "public",
+    "public": "frontend",
     "ignore": [
       "firebase.json",
       "**/.*",

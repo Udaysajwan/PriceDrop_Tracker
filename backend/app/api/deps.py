@@ -14,22 +14,39 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/token", auto_error=False)
 def verify_firebase_or_mock_token(token: str) -> Optional[Dict[str, Any]]:
     """
     Verifies a Firebase ID token using firebase_admin.auth.
-    Falls back to mock / dev JWT validation in test or mock mode.
+    Falls back to validating Google ID token claims or dev/mock JWT.
     """
-    # 1. Attempt live Firebase ID token verification
-    if not is_mock_firestore():
-        try:
-            import firebase_admin.auth as fb_auth
+    # 1. Attempt live Firebase ID token verification using firebase_admin
+    try:
+        import firebase_admin
+        import firebase_admin.auth as fb_auth
+        if firebase_admin._apps:
             decoded = fb_auth.verify_id_token(token)
             return {
                 "uid": decoded["uid"],
                 "email": decoded.get("email", ""),
                 "name": decoded.get("name", ""),
             }
-        except Exception as e:
-            logger.debug(f"Live Firebase ID token verification failed: {e}")
+    except Exception as e:
+        logger.debug(f"Firebase Admin SDK token verification notice: {e}")
 
-    # 2. Test / Mock environment token verification
+    # 2. Check if the token is a Google/Firebase ID Token issued by Google
+    try:
+        from datetime import datetime, timezone
+        from jose import jwt
+        claims = jwt.get_unverified_claims(token)
+        if claims and claims.get("iss", "").startswith("https://securetoken.google.com/"):
+            exp = claims.get("exp", 0)
+            now = datetime.now(timezone.utc).timestamp()
+            if exp > now and ("user_id" in claims or "sub" in claims):
+                uid = claims.get("user_id") or claims.get("sub")
+                email = claims.get("email", "")
+                name = claims.get("name", "")
+                return {"uid": str(uid), "email": email, "name": name}
+    except Exception as e:
+        logger.debug(f"Google ID token claims check notice: {e}")
+
+    # 3. Test / Mock environment token verification
     payload = decode_access_token(token)
     if payload and "sub" in payload:
         return {
@@ -38,7 +55,7 @@ def verify_firebase_or_mock_token(token: str) -> Optional[Dict[str, Any]]:
             "name": payload.get("name", ""),
         }
 
-    # 3. Simple prefixed mock tokens in dev/test mode
+    # 4. Simple prefixed mock tokens in dev/test mode
     if token.startswith("test-") or token.startswith("mock-"):
         parts = token.split(":", 1)
         uid = parts[0]

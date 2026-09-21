@@ -88,11 +88,11 @@ async function signOutFirebase() {
   }
 }
 
-// Listen to Auth state changes
+// Listen to Auth state changes and token refresh
 function onFirebaseAuthStateChanged(callback) {
   if (!auth) initFirebase();
   if (auth) {
-    auth.onAuthStateChanged(async (user) => {
+    auth.onIdTokenChanged(async (user) => {
       if (user) {
         try {
           const idToken = await user.getIdToken();

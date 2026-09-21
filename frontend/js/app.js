@@ -210,9 +210,12 @@ document.addEventListener("DOMContentLoaded", async () => {
       navAuth.innerHTML = `
         <button id="btn-firebase-login" class="btn btn-primary btn-sm">Sign In / Register</button>
       `;
-      document.getElementById("btn-firebase-login").addEventListener("click", () => openFirebaseAuthModal(false));
+      document.getElementById("btn-firebase-login")?.addEventListener("click", () => openFirebaseAuthModal(false));
     }
   }
+
+  // Bind initial navbar button immediately
+  document.getElementById("btn-firebase-login")?.addEventListener("click", () => openFirebaseAuthModal(false));
 
   // Subscribe to Firebase Auth state changes
   if (window.firebaseAuth) {

@@ -137,21 +137,40 @@ _is_mock_mode = False
 def init_firestore():
     global _firestore_client, _is_mock_mode
 
+    import json
+    import firebase_admin
+    from firebase_admin import credentials, firestore
+
+    # Check for credentials in:
+    # 1. FIREBASE_CREDENTIALS_JSON environment variable (standard for Render / Heroku)
+    # 2. Local file at settings.FIREBASE_CREDENTIALS_PATH
+    cred_json_env = os.environ.get("FIREBASE_CREDENTIALS_JSON") or os.environ.get("FIREBASE_SERVICE_ACCOUNT")
     cred_path = settings.FIREBASE_CREDENTIALS_PATH
     abs_cred_path = os.path.abspath(cred_path) if not os.path.isabs(cred_path) else cred_path
 
-    if os.path.exists(abs_cred_path):
+    cred = None
+    if cred_json_env:
         try:
-            import firebase_admin
-            from firebase_admin import credentials, firestore
+            cred_dict = json.loads(cred_json_env)
+            cred = credentials.Certificate(cred_dict)
+            logger.info("Loaded Firebase credentials from environment variable.")
+        except Exception as e:
+            logger.warning(f"Failed to parse FIREBASE_CREDENTIALS_JSON: {e}")
+    elif os.path.exists(abs_cred_path):
+        try:
+            cred = credentials.Certificate(abs_cred_path)
+            logger.info(f"Loaded Firebase credentials from {abs_cred_path}")
+        except Exception as e:
+            logger.warning(f"Failed to load credentials from {abs_cred_path}: {e}")
 
+    if cred is not None:
+        try:
             if not firebase_admin._apps:
-                cred = credentials.Certificate(abs_cred_path)
                 options = {}
-                if settings.FIREBASE_PROJECT_ID:
-                    options["projectId"] = settings.FIREBASE_PROJECT_ID
+                project_id = settings.FIREBASE_PROJECT_ID or "backend--api"
+                options["projectId"] = project_id
                 firebase_admin.initialize_app(cred, options)
-                logger.info(f"Connected to live Firebase project using {abs_cred_path}")
+                logger.info(f"Connected to live Firebase project: {project_id}")
 
             _firestore_client = firestore.client()
             _is_mock_mode = False
@@ -159,12 +178,18 @@ def init_firestore():
             return _firestore_client
         except Exception as e:
             logger.warning(f"Failed to initialize live Firebase Admin SDK ({e}). Falling back to in-memory Firestore.")
-    else:
-        logger.info(
-            f"No Firebase service account key found at '{abs_cred_path}'. "
-            "Using in-memory Mock Firestore Provider (drop 'firebase-credentials.json' to connect to live Cloud Firestore)."
-        )
 
+    # Even without a service account key, initialize default Firebase App with projectId
+    # so firebase_admin.auth can verify Google ID tokens
+    if not firebase_admin._apps:
+        try:
+            project_id = settings.FIREBASE_PROJECT_ID or "backend--api"
+            firebase_admin.initialize_app(options={"projectId": project_id})
+            logger.info(f"Initialized default Firebase Admin app for project: {project_id}")
+        except Exception as e:
+            logger.debug(f"Default Firebase Admin app initialization: {e}")
+
+    logger.info("Using in-memory Mock Firestore Provider.")
     _firestore_client = MockFirestoreClient()
     _is_mock_mode = True
     return _firestore_client

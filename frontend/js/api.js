@@ -44,13 +44,37 @@ class ApiClient {
     }
 
     if (!response.ok) {
-      let errorMsg = `Request failed: ${response.statusText}`;
-      try {
-        const data = await response.json();
-        if (data.detail) {
-          errorMsg = typeof data.detail === "string" ? data.detail : JSON.stringify(data.detail);
+      const rawText = await response.text();
+      let errorMsg = `Request failed (HTTP ${response.status}${response.statusText ? ': ' + response.statusText : ''})`;
+
+      if (response.status === 401) {
+        errorMsg = "Session expired or unauthorized. Please sign in again.";
+      }
+
+      if (rawText) {
+        try {
+          const data = JSON.parse(rawText);
+          if (data.detail) {
+            if (typeof data.detail === "string") {
+              errorMsg = data.detail;
+            } else if (Array.isArray(data.detail)) {
+              errorMsg = data.detail.map(d => d.msg || JSON.stringify(d)).join("; ");
+            } else {
+              errorMsg = JSON.stringify(data.detail);
+            }
+          } else if (data.message) {
+            errorMsg = data.message;
+          } else if (data.error) {
+            errorMsg = typeof data.error === "string" ? data.error : JSON.stringify(data.error);
+          }
+        } catch (e) {
+          // Response is plain text (e.g. 500 error or HTML error page from proxy)
+          const stripped = rawText.replace(/<[^>]*>?/gm, " ").replace(/\s+/g, " ").trim();
+          if (stripped) {
+            errorMsg = `${errorMsg} - ${stripped.slice(0, 150)}`;
+          }
         }
-      } catch (e) {}
+      }
       throw new Error(errorMsg);
     }
 

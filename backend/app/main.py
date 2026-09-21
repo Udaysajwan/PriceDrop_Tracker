@@ -1,8 +1,12 @@
 import os
+import logging
 from contextlib import asynccontextmanager
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+
+logger = logging.getLogger("price_tracker.main")
 
 from backend.app.config import settings
 from backend.app.database_firebase import init_firestore, is_mock_firestore
@@ -58,6 +62,16 @@ app.include_router(auth_router)
 app.include_router(products_router)
 app.include_router(alerts_router)
 app.include_router(mock_store_router)
+
+
+@app.exception_handler(Exception)
+async def generic_exception_handler(request: Request, exc: Exception):
+    """Ensure all unhandled backend exceptions return clean structured JSON with descriptive details."""
+    logger.error(f"Unhandled server error on {request.method} {request.url.path}: {exc}", exc_info=True)
+    return JSONResponse(
+        status_code=500,
+        content={"detail": f"Server error: {str(exc)}"}
+    )
 
 
 @app.get("/health", tags=["System"])

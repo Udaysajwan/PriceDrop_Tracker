@@ -22,7 +22,7 @@
       </a>
       <div class="nav-auth" id="nav-auth">
         <!-- Injected dynamically by app.js with Firebase Auth -->
-        <button id="btn-firebase-login" class="btn btn-primary btn-sm">Sign In with Google</button>
+        <button id="btn-firebase-login" class="btn btn-primary btn-sm">Sign In / Register</button>
       </div>
     </div>
   </header>
@@ -110,6 +110,38 @@
     </div>
 
   </main>
+
+  <!-- Firebase Email & Password Authentication Modal -->
+  <div class="modal-backdrop" id="firebase-auth-modal">
+    <div class="modal-card" style="max-width: 440px;">
+      <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;">
+        <h2 id="firebase-auth-title" style="font-size: 1.35rem; font-weight: 700; margin: 0;">Sign In with Firebase</h2>
+        <button class="modal-close" id="firebase-modal-close" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--gray-400); line-height: 1;">&times;</button>
+      </div>
+
+      <div id="firebase-auth-error" style="display:none; color: var(--danger); background: var(--danger-light); padding: 0.75rem; border-radius: 6px; margin-bottom: 1rem; font-size: 0.9rem;"></div>
+      <div id="firebase-auth-success" style="display:none; color: var(--success); background: #e6f9ed; padding: 0.75rem; border-radius: 6px; margin-bottom: 1rem; font-size: 0.9rem;"></div>
+
+      <form id="firebase-auth-form">
+        <div class="form-group" style="margin-bottom: 1rem;">
+          <label for="fb-email" style="display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 0.35rem; color: var(--gray-700);">Email Address</label>
+          <input type="email" id="fb-email" class="form-control" placeholder="user@example.com" required style="width: 100%; padding: 0.65rem; border: 1px solid var(--gray-300); border-radius: 6px;">
+        </div>
+        <div class="form-group" style="margin-bottom: 1.25rem;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem;">
+            <label for="fb-password" style="font-size: 0.85rem; font-weight: 600; color: var(--gray-700); margin: 0;">Password</label>
+            <a href="#" id="fb-forgot-password" style="font-size: 0.8rem; color: var(--primary); text-decoration: none;">Forgot password?</a>
+          </div>
+          <input type="password" id="fb-password" class="form-control" placeholder="••••••••" required style="width: 100%; padding: 0.65rem; border: 1px solid var(--gray-300); border-radius: 6px;">
+        </div>
+        <button type="submit" id="fb-submit-btn" class="btn btn-primary" style="width: 100%;">Sign In</button>
+      </form>
+
+      <div style="margin-top: 1.25rem; text-align: center; font-size: 0.9rem; color: var(--gray-600);" id="fb-switch-container">
+        Don't have an account? <a href="#" id="fb-toggle-mode" style="color: var(--primary); font-weight: 600; text-decoration: none;">Create Firebase Account</a>
+      </div>
+    </div>
+  </div>
 
   <!-- Add Product Modal -->
   <div class="modal-backdrop" id="add-product-modal">

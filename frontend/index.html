@@ -23,7 +23,7 @@
       </a>
       <div class="nav-auth" id="nav-auth">
         <!-- Injected dynamically by app.js with Firebase Auth -->
-        <button id="btn-firebase-login" class="btn btn-primary btn-sm">Sign In / Register</button>
+        <button id="btn-firebase-login" class="btn btn-primary btn-sm" onclick="if(window.openFirebaseAuthModal) { window.openFirebaseAuthModal(false); } else { document.getElementById('firebase-auth-modal').classList.add('active'); }">Sign In / Register</button>
       </div>
     </div>
   </header>
@@ -113,11 +113,11 @@
   </main>
 
   <!-- Firebase Email & Password Authentication Modal -->
-  <div class="modal-backdrop" id="firebase-auth-modal">
-    <div class="modal-card" style="max-width: 440px;">
+  <div class="modal-backdrop" id="firebase-auth-modal" onclick="if(event.target===this) this.classList.remove('active')">
+    <div class="modal-card" style="max-width: 440px;" onclick="event.stopPropagation()">
       <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;">
         <h2 id="firebase-auth-title" style="font-size: 1.35rem; font-weight: 700; margin: 0;">Sign In with Firebase</h2>
-        <button class="modal-close" id="firebase-modal-close" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--gray-400); line-height: 1;">&times;</button>
+        <button class="modal-close" id="firebase-modal-close" onclick="document.getElementById('firebase-auth-modal').classList.remove('active')" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--gray-400); line-height: 1;">&times;</button>
       </div>
 
       <div id="firebase-auth-error" style="display:none; color: var(--danger); background: var(--danger-light); padding: 0.75rem; border-radius: 6px; margin-bottom: 1rem; font-size: 0.9rem;"></div>
@@ -209,9 +209,9 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
   <!-- App Scripts -->
-  <script src="/js/firebase-config.js"></script>
-  <script src="/js/api.js"></script>
-  <script src="/js/charts.js"></script>
-  <script src="/js/app.js"></script>
+  <script src="/js/firebase-config.js?v=2.2"></script>
+  <script src="/js/api.js?v=2.2"></script>
+  <script src="/js/charts.js?v=2.2"></script>
+  <script src="/js/app.js?v=2.2"></script>
 </body>
 </html>

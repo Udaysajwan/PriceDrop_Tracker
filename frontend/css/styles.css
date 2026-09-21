@@ -428,17 +428,18 @@ header {
 .modal-backdrop {
   position: fixed;
   inset: 0;
-  background-color: rgba(15, 23, 42, 0.5);
+  background-color: rgba(15, 23, 42, 0.65);
   backdrop-filter: blur(4px);
   display: none;
   align-items: center;
   justify-content: center;
-  z-index: 50;
+  z-index: 9999;
   padding: 1rem;
 }
 
 .modal-backdrop.active {
-  display: flex;
+  display: flex !important;
+  z-index: 9999 !important;
 }
 
 .modal-card {

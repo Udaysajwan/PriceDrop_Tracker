@@ -61,6 +61,10 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (firebaseAuthModal) firebaseAuthModal.classList.remove("active");
   }
 
+  // Expose globally for instant button clicks
+  window.openFirebaseAuthModal = openFirebaseAuthModal;
+  window.closeFirebaseAuthModal = closeFirebaseAuthModal;
+
   function updateModalMode() {
     const switchContainer = document.getElementById("fb-switch-container");
     if (!switchContainer) return;

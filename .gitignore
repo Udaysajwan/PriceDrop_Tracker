@@ -45,6 +45,8 @@ npm-debug.log*
 .agents/
 .claude/
 .firebase/
+firebase-debug.log*
+*.log
 *.swp
 *.swo
 .DS_Store

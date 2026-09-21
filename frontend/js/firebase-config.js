@@ -46,6 +46,37 @@ async function signInWithGoogle() {
   }
 }
 
+// Sign in with Email and Password via Firebase
+async function signInWithEmail(email, password) {
+  if (!auth) initFirebase();
+  if (!auth) throw new Error("Firebase Auth is not initialized.");
+  const result = await auth.signInWithEmailAndPassword(email, password);
+  const idToken = await result.user.getIdToken();
+  if (window.api) {
+    window.api.setToken(idToken);
+  }
+  return result.user;
+}
+
+// Sign up with Email and Password via Firebase
+async function signUpWithEmail(email, password) {
+  if (!auth) initFirebase();
+  if (!auth) throw new Error("Firebase Auth is not initialized.");
+  const result = await auth.createUserWithEmailAndPassword(email, password);
+  const idToken = await result.user.getIdToken();
+  if (window.api) {
+    window.api.setToken(idToken);
+  }
+  return result.user;
+}
+
+// Send Password Reset Email via Firebase
+async function sendPasswordReset(email) {
+  if (!auth) initFirebase();
+  if (!auth) throw new Error("Firebase Auth is not initialized.");
+  return auth.sendPasswordResetEmail(email);
+}
+
 // Sign out
 async function signOutFirebase() {
   if (!auth) initFirebase();
@@ -87,6 +118,9 @@ function onFirebaseAuthStateChanged(callback) {
 window.firebaseAuth = {
   initFirebase,
   signInWithGoogle,
+  signInWithEmail,
+  signUpWithEmail,
+  sendPasswordReset,
   signOutFirebase,
   onFirebaseAuthStateChanged,
 };

@@ -28,18 +28,26 @@ class UserRepository:
         data["id"] = docs[0].id
         return data
 
-    def create(self, email: str, hashed_password: str) -> Dict[str, Any]:
-        user_id = str(uuid.uuid4())
+    def create(self, email: str, hashed_password: Optional[str] = None, user_id: Optional[str] = None, display_name: Optional[str] = None) -> Dict[str, Any]:
+        uid = str(user_id) if user_id else str(uuid.uuid4())
         now_str = datetime.now(timezone.utc).isoformat()
         user_data = {
-            "id": user_id,
-            "email": email.strip().lower(),
-            "hashed_password": hashed_password,
+            "id": uid,
+            "email": email.strip().lower() if email else None,
+            "display_name": display_name,
             "is_active": True,
             "created_at": now_str,
         }
-        self.collection.document(user_id).set(user_data)
+        if hashed_password:
+            user_data["hashed_password"] = hashed_password
+        self.collection.document(uid).set(user_data)
         return user_data
+
+    def get_or_create(self, user_id: str, email: Optional[str] = None, display_name: Optional[str] = None) -> Dict[str, Any]:
+        existing = self.get_by_id(str(user_id))
+        if existing:
+            return existing
+        return self.create(email=email or "", user_id=user_id, display_name=display_name)
 
 
 user_repo = UserRepository()

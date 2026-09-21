@@ -33,7 +33,7 @@ def client():
 def test_user():
     user = user_repo.create(
         email="tester@example.com",
-        hashed_password=hash_password("Password123!")
+        display_name="Test User"
     )
     return user
 

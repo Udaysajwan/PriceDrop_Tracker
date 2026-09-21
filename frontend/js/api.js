@@ -61,26 +61,11 @@ class ApiClient {
     return await response.json();
   }
 
-  // Auth Endpoints
-  async register(email, password) {
-    return this.request("/auth/register", {
-      method: "POST",
-      body: JSON.stringify({ email, password }),
-    });
-  }
-
-  async login(email, password) {
-    const data = await this.request("/auth/login", {
-      method: "POST",
-      body: JSON.stringify({ email, password }),
-    });
-    this.setToken(data.access_token);
-    window.dispatchEvent(new CustomEvent("auth-change", { detail: data }));
-    return data;
-  }
-
   logout() {
     this.setToken(null);
+    if (window.firebaseAuth) {
+      window.firebaseAuth.signOutFirebase();
+    }
     window.dispatchEvent(new CustomEvent("auth-change", { detail: null }));
   }
 
@@ -126,6 +111,22 @@ class ApiClient {
   async checkProductNow(productId) {
     return this.request(`/products/${productId}/check`, {
       method: "POST",
+    });
+  }
+
+  // Alerts Endpoints
+  async getAlerts() {
+    return this.request("/alerts");
+  }
+
+  async getActiveAlerts() {
+    return this.request("/alerts/active");
+  }
+
+  async dismissAlert(alertId) {
+    return this.request(`/alerts/${alertId}`, {
+      method: "PATCH",
+      body: JSON.stringify({ status: "dismissed" }),
     });
   }
 

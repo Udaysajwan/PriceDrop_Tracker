@@ -3,12 +3,6 @@
 document.addEventListener("DOMContentLoaded", async () => {
   // Elements
   const navAuth = document.getElementById("nav-auth");
-  const authModal = document.getElementById("auth-modal");
-  const authForm = document.getElementById("auth-form");
-  const authTitle = document.getElementById("auth-title");
-  const authSwitchText = document.getElementById("auth-switch-text");
-  const authSwitchBtn = document.getElementById("auth-switch-btn");
-  const authError = document.getElementById("auth-error");
 
   const addProductModal = document.getElementById("add-product-modal");
   const addProductForm = document.getElementById("add-product-form");
@@ -33,12 +27,11 @@ document.addEventListener("DOMContentLoaded", async () => {
   const btnApplyDemoPrice = document.getElementById("btn-apply-demo-price");
   const demoStatusMsg = document.getElementById("demo-status-msg");
 
-  let isRegisterMode = false;
   let currentUser = null;
   let activeProducts = [];
 
   // ----------------------------------------------------
-  // Auth Flow
+  // Firebase Auth Flow
   // ----------------------------------------------------
   async function checkAuth() {
     currentUser = await window.api.getCurrentUser();
@@ -48,75 +41,80 @@ document.addEventListener("DOMContentLoaded", async () => {
       initDemoSelector();
     } else {
       renderLoggedOutState();
-      openAuthModal();
+    }
+  }
+
+  function renderLoggedOutState() {
+    statTotal.textContent = "0";
+    statDrops.textContent = "0";
+    statSavings.textContent = "₹0.00";
+    if (targetHitAlert) targetHitAlert.classList.add("hidden");
+    productsContainer.innerHTML = `
+      <div class="empty-state" style="grid-column: 1 / -1; text-align: center; padding: 3rem 1.5rem; background: var(--white); border-radius: var(--radius); border: 1px dashed var(--gray-300);">
+        <div style="font-size: 3rem; margin-bottom: 1rem;">🔐</div>
+        <h3 style="font-size: 1.25rem; font-weight: 700; color: var(--gray-800); margin-bottom: 0.5rem;">Sign In with Firebase</h3>
+        <p style="color: var(--gray-600); max-width: 460px; margin: 0 auto 1.5rem auto; font-size: 0.95rem;">
+          Sign in with your Google / Firebase account to track products, receive price drop alerts, and view price histories.
+        </p>
+        <button id="btn-login-hero" class="btn btn-primary">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" style="margin-right: 6px;">
+            <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+            <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+            <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" fill="#FBBC05"/>
+            <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" fill="#EA4335"/>
+          </svg>
+          Sign In with Google
+        </button>
+      </div>
+    `;
+    const heroLogin = document.getElementById("btn-login-hero");
+    if (heroLogin) {
+      heroLogin.addEventListener("click", handleGoogleSignIn);
     }
   }
 
   function updateNav() {
     if (currentUser) {
+      const displayName = currentUser.display_name || currentUser.email || "Firebase User";
       navAuth.innerHTML = `
-        <span class="user-badge">👤 ${currentUser.email}</span>
-        <button id="btn-logout" class="btn btn-outline btn-sm">Log Out</button>
+        <span class="user-badge">👤 ${displayName}</span>
+        <button id="btn-logout" class="btn btn-outline btn-sm">Sign Out</button>
       `;
       document.getElementById("btn-logout").addEventListener("click", () => {
         window.api.logout();
       });
     } else {
       navAuth.innerHTML = `
-        <button id="btn-open-login" class="btn btn-primary btn-sm">Log In / Sign Up</button>
+        <button id="btn-firebase-login" class="btn btn-primary btn-sm">Sign In with Google</button>
       `;
-      document.getElementById("btn-open-login").addEventListener("click", () => {
-        openAuthModal();
-      });
+      document.getElementById("btn-firebase-login").addEventListener("click", handleGoogleSignIn);
     }
+  }
+
+  async function handleGoogleSignIn() {
+    try {
+      if (window.firebaseAuth) {
+        await window.firebaseAuth.signInWithGoogle();
+      } else {
+        alert("Firebase Authentication SDK is loading. Please try again in a moment.");
+      }
+    } catch (err) {
+      console.error("Sign-in failed:", err);
+      alert(`Sign in failed: ${err.message || err}`);
+    }
+  }
+
+  // Subscribe to Firebase Auth state changes
+  if (window.firebaseAuth) {
+    window.firebaseAuth.onFirebaseAuthStateChanged(async (user) => {
+      await checkAuth();
+    });
+  } else {
+    checkAuth();
   }
 
   window.addEventListener("auth-change", () => {
     checkAuth();
-  });
-
-  function openAuthModal() {
-    authModal.classList.add("active");
-    authError.style.display = "none";
-  }
-
-  function closeAuthModal() {
-    authModal.classList.remove("active");
-  }
-
-  authSwitchBtn.addEventListener("click", (e) => {
-    e.preventDefault();
-    isRegisterMode = !isRegisterMode;
-    if (isRegisterMode) {
-      authTitle.textContent = "Create an Account";
-      authSwitchText.innerHTML = `Already have an account? <a href="#" id="auth-switch-btn">Log in</a>`;
-    } else {
-      authTitle.textContent = "Welcome Back";
-      authSwitchText.innerHTML = `Don't have an account? <a href="#" id="auth-switch-btn">Sign up</a>`;
-    }
-    // Rebind the switch button inside the updated HTML
-    document.getElementById("auth-switch-btn").addEventListener("click", (ev) => {
-      ev.preventDefault();
-      authSwitchBtn.click();
-    });
-  });
-
-  authForm.addEventListener("submit", async (e) => {
-    e.preventDefault();
-    authError.style.display = "none";
-    const email = document.getElementById("auth-email").value.trim();
-    const password = document.getElementById("auth-password").value;
-
-    try {
-      if (isRegisterMode) {
-        await window.api.register(email, password);
-      }
-      await window.api.login(email, password);
-      closeAuthModal();
-    } catch (err) {
-      authError.textContent = err.message;
-      authError.style.display = "block";
-    }
   });
 
   // ----------------------------------------------------
@@ -165,20 +163,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     statSavings.textContent = `₹${totalSavings.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   }
 
-  function renderLoggedOutState() {
-    productsContainer.innerHTML = `
-      <div class="empty-state" style="grid-column: 1 / -1;">
-        <h3>Track Your Favorite Products</h3>
-        <p>Please log in or create an account to start tracking product prices and receive drop alerts.</p>
-        <button class="btn btn-primary" onclick="document.getElementById('auth-modal').classList.add('active')">
-          Log In / Sign Up
-        </button>
-      </div>
-    `;
-    statTotal.textContent = "0";
-    statDrops.textContent = "0";
-    statSavings.textContent = "₹0.00";
-  }
 
   function renderProducts(products) {
     if (!products || products.length === 0) {
@@ -285,7 +269,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   // ----------------------------------------------------
   addProductBtn.addEventListener("click", () => {
     if (!currentUser) {
-      openAuthModal();
+      handleGoogleSignIn();
       return;
     }
     addProductModal.classList.add("active");

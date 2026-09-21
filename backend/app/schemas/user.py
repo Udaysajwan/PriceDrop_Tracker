@@ -10,8 +10,10 @@ class UserCreate(UserBase):
     password: str
 
 
-class UserResponse(UserBase):
+class UserResponse(BaseModel):
     id: Union[str, int]
+    email: Optional[str] = None
+    display_name: Optional[str] = None
     is_active: bool = True
     created_at: Union[str, Any] = None
 

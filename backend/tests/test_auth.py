@@ -1,43 +1,3 @@
-def test_register_user(client):
-    response = client.post(
-        "/auth/register",
-        json={"email": "newuser@example.com", "password": "SecurePassword123!"}
-    )
-    assert response.status_code == 201
-    data = response.json()
-    assert data["email"] == "newuser@example.com"
-    assert "id" in data
-    assert "hashed_password" not in data
-
-
-def test_register_duplicate_email(client, test_user):
-    response = client.post(
-        "/auth/register",
-        json={"email": test_user["email"], "password": "AnotherPassword123!"}
-    )
-    assert response.status_code == 400
-    assert "already exists" in response.json()["detail"]
-
-
-def test_login_json(client, test_user):
-    response = client.post(
-        "/auth/login",
-        json={"email": test_user["email"], "password": "Password123!"}
-    )
-    assert response.status_code == 200
-    data = response.json()
-    assert "access_token" in data
-    assert data["token_type"] == "bearer"
-
-
-def test_login_invalid_password(client, test_user):
-    response = client.post(
-        "/auth/login",
-        json={"email": test_user["email"], "password": "WrongPassword!"}
-    )
-    assert response.status_code == 401
-
-
 def test_get_current_user_me(client, auth_headers, test_user):
     response = client.get("/auth/me", headers=auth_headers)
     assert response.status_code == 200
@@ -46,4 +6,27 @@ def test_get_current_user_me(client, auth_headers, test_user):
 
 def test_get_current_user_unauthorized(client):
     response = client.get("/auth/me")
+    assert response.status_code == 401
+
+
+def test_get_current_user_invalid_token(client):
+    response = client.get("/auth/me", headers={"Authorization": "Bearer invalid.token.value"})
+    assert response.status_code == 401
+
+
+def test_firebase_token_auto_provisions_user(client):
+    # A new Firebase user connecting for the first time
+    headers = {"Authorization": "Bearer mock-uid-newuser:newuser@firebase.com"}
+    response = client.get("/auth/me", headers=headers)
+    assert response.status_code == 200
+    data = response.json()
+    assert data["id"] == "mock-uid-newuser"
+    assert data["email"] == "newuser@firebase.com"
+
+
+def test_inactive_user_cannot_access(client, auth_headers, test_user):
+    from backend.app.repositories.user_repo import user_repo
+    # Mark user inactive in Firestore
+    user_repo.collection.document(str(test_user["id"])).update({"is_active": False})
+    response = client.get("/auth/me", headers=auth_headers)
     assert response.status_code == 401
